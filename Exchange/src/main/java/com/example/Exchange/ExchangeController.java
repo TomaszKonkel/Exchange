@@ -78,26 +78,33 @@ public class ExchangeController {
 
     @GetMapping(value = "/check")
     public String check(@RequestParam String currencyFrom, String currencyTo, Date date) {
+        Date fromDateLast = null;
+        Date fromDateFirst = null;
+        Date toDateLast = null;
+        Date toDateFirst = null;
+
         if (currencyFrom.equals("XXX") && currencyTo.equals("XXX")) {
-            return "Good";
+            return "Not choose";
         } else {
-            Date fromDateLast = exchangeRepository.findTopByCurrencyTo(currencyFrom).getDate();
-            Date toDateLast = exchangeRepository.findTopByCurrencyTo(currencyTo).getDate();
+            if(!currencyFrom.equals("EUR")) {
+                fromDateLast = exchangeRepository.findTopByCurrencyTo(currencyFrom).getDate();
+                fromDateFirst = exchangeRepository.findFirstByCurrencyToOrderByDateAsc(currencyFrom).getDate();
+            }
+            if(!currencyTo.equals("EUR")) {
+                toDateLast = exchangeRepository.findTopByCurrencyTo(currencyTo).getDate();
+                toDateFirst = exchangeRepository.findFirstByCurrencyToOrderByDateAsc(currencyTo).getDate();
+            }
 
-            Date fromDateFirst = exchangeRepository.findFirstByCurrencyToOrderByDateAsc(currencyFrom).getDate();
-            Date toDateFirst = exchangeRepository.findFirstByCurrencyToOrderByDateAsc(currencyTo).getDate();
-
-
-            if (date.compareTo(fromDateLast) > 0) {
+            if  (fromDateLast != null && date.compareTo(fromDateLast) > 0) {
                 return "Currency from doesn't exist already";
             }
-            if (date.compareTo(toDateLast) > 0) {
+            if (toDateLast != null && date.compareTo(toDateLast) > 0 ) {
                 return "Currency to doesn't exist already";
             }
-            if (fromDateFirst.compareTo(date) > 0) {
+            if (fromDateFirst !=null && fromDateFirst.compareTo(date) > 0 ) {
                 return "Currency from doesn't exist yet";
             }
-            if (toDateFirst.compareTo(date) > 0) {
+            if (toDateFirst !=null && toDateFirst.compareTo(date) > 0 ) {
                 return "Currency to doesn't exist yet";
             }
             return "Good";
