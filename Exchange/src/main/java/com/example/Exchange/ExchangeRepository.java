@@ -12,16 +12,9 @@ public interface ExchangeRepository extends CrudRepository<Exchange, Integer> {
 
     Exchange findByCurrencyFromAndCurrencyToAndDate(String currencyFrom, String currencyTo, Date date);
 
-    ArrayList findDistinctByCurrencyFrom(String eur);
-
-
-    Iterable<Exchange> findByCurrencyTo(String eek);
-
-
     Exchange findTopByCurrencyTo(String currency);
 
-
-
-    Exchange findLastByCurrencyTo(String currencyTo);
     Exchange findFirstByCurrencyToOrderByDateAsc(String currency);
+
+    Exchange findTopByOrderByDateDesc();
 }

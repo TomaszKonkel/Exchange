@@ -3,6 +3,7 @@ package com.example.Exchange;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -24,9 +25,13 @@ public class ExchangeController {
     }
 
     @GetMapping(value = "/exchange")
-    public BigDecimal addProject(@RequestParam String currencyFrom, String currencyTo, Date date) {
+    public ResponseEntity addProject(@RequestParam String currencyFrom, String currencyTo, Date date) {
+        Date lastDate = exchangeRepository.findTopByOrderByDateDesc().getDate();
+        if(date.compareTo(lastDate) > 0){
+            return ResponseEntity.ok("Given date doesn't exist in database ");
+        }
         if (currencyFrom.equals("XXX") && currencyTo.equals("XXX")) {
-            return new BigDecimal("0");
+            return check(currencyFrom, currencyTo, date);
         } else {
             int day = date.getDay();
             if (day == 6) {
@@ -38,25 +43,25 @@ public class ExchangeController {
             if (currencyTo.equals("EUR")) {
                 Exchange result = exchangeRepository.findByCurrencyFromAndCurrencyToAndDate(currencyTo, currencyFrom, date);
                 if(result == null){
-                    return new BigDecimal("0");
+                    return check(currencyFrom, currencyTo, date);
                 } else {
                     BigDecimal rate = new BigDecimal("1").divide(result.getRate(), 2, RoundingMode.HALF_UP);
-                    return rate;
+                    return ResponseEntity.ok(rate);
                 }
             }
             if (currencyFrom.equals(currencyTo)) {
-                return new BigDecimal("1");
+                return ResponseEntity.ok(1);
             }
             if (!currencyFrom.equals("EUR") && !currencyTo.equals("EUR")) {
                 Exchange numeral = exchangeRepository.findByCurrencyFromAndCurrencyToAndDate("EUR", currencyTo, date);
                 Exchange denominator = exchangeRepository.findByCurrencyFromAndCurrencyToAndDate("EUR", currencyFrom, date);
                 if(denominator == null || numeral == null){
-                    return new BigDecimal("0");
+                    return check(currencyFrom, currencyTo, date);
                 } else {
-                    return new BigDecimal(String.valueOf(numeral.getRate())).divide(denominator.getRate(), 2, RoundingMode.HALF_UP);
+                    return ResponseEntity.ok(numeral.getRate().divide(denominator.getRate(), 2, RoundingMode.HALF_UP));
                 }
             } else {
-                return exchangeRepository.findByCurrencyFromAndCurrencyToAndDate(currencyFrom, currencyTo, date).getRate();
+                return ResponseEntity.ok(exchangeRepository.findByCurrencyFromAndCurrencyToAndDate(currencyFrom, currencyTo, date).getRate());
             }
         }
     }
@@ -75,16 +80,15 @@ public class ExchangeController {
 
        return currency;
     }
-
-    @GetMapping(value = "/check")
-    public String check(@RequestParam String currencyFrom, String currencyTo, Date date) {
+    public ResponseEntity check(String currencyFrom, String currencyTo, Date date) {
         Date fromDateLast = null;
         Date fromDateFirst = null;
         Date toDateLast = null;
         Date toDateFirst = null;
 
         if (currencyFrom.equals("XXX") && currencyTo.equals("XXX")) {
-            return "Not choose";
+            return ResponseEntity.ok("Not choose ");
+
         } else {
             if(!currencyFrom.equals("EUR")) {
                 fromDateLast = exchangeRepository.findTopByCurrencyTo(currencyFrom).getDate();
@@ -96,18 +100,21 @@ public class ExchangeController {
             }
 
             if  (fromDateLast != null && date.compareTo(fromDateLast) > 0) {
-                return "Currency from doesn't exist already";
+                return ResponseEntity.ok("Currency from doesn't exist already ");
+
             }
             if (toDateLast != null && date.compareTo(toDateLast) > 0 ) {
-                return "Currency to doesn't exist already";
+                return ResponseEntity.ok("Currency to doesn't exist already ");
+
             }
             if (fromDateFirst !=null && fromDateFirst.compareTo(date) > 0 ) {
-                return "Currency from doesn't exist yet";
+                return ResponseEntity.ok("Currency from doesn't exist yet ");
             }
             if (toDateFirst !=null && toDateFirst.compareTo(date) > 0 ) {
-                return "Currency to doesn't exist yet";
+                return ResponseEntity.ok("Currency to doesn't exist yet ");
+
             }
-            return "Good";
+            return ResponseEntity.ok("Good ");
         }
     }
 
