@@ -12,7 +12,7 @@ import java.sql.Date;
 import java.util.ArrayList;
 
 @RestController
-@RequestMapping("/api/project")
+@RequestMapping("/api")
 @CrossOrigin
 public class ExchangeController {
     private ExchangeRepository exchangeRepository;
@@ -61,7 +61,13 @@ public class ExchangeController {
                     return ResponseEntity.ok(numeral.getRate().divide(denominator.getRate(), 2, RoundingMode.HALF_UP));
                 }
             } else {
-                return ResponseEntity.ok(exchangeRepository.findByCurrencyFromAndCurrencyToAndDate(currencyFrom, currencyTo, date).getRate());
+                Exchange result = exchangeRepository.findByCurrencyFromAndCurrencyToAndDate(currencyFrom, currencyTo, date);
+                if(result == null){
+                    return check(currencyFrom, currencyTo, date);
+                }else {
+                    return ResponseEntity.ok(exchangeRepository.findByCurrencyFromAndCurrencyToAndDate(currencyFrom, currencyTo, date).getRate());
+                }
+
             }
         }
     }
