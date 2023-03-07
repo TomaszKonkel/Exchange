@@ -1,7 +1,5 @@
 package com.example.Exchange;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -13,66 +11,56 @@ import java.math.BigDecimal;
 import java.sql.Date;
 
 public class Fetch {
-
-
     public static void Download(ExchangeRepository exchangeRepository) {
         if (exchangeRepository.count() == 0) {
-
+            System.out.println("Table is empty");
             try {
-                //Użycie DocumentBuilderFactory do pobrania pliku z ECB
+                //Getting xml file from ecb
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder builder = factory.newDocumentBuilder();
                 Document doc = builder.parse("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml");
                 doc.getDocumentElement().normalize();
 
-                //Stworzenie NodeList który przechowuje element z pliku z datami
+                //Elements which contains dates (is used to define number of dates)
                 NodeList dataList = (NodeList) doc.getElementsByTagName("Cube").item(0);
-                //Zapytanie sprawdzające zawartość bazy
 
-
-                //Pętla od dni w pliku od ECB (od ostatniego do pierwszego)
-                for (int i = 0; i < dataList.getLength(); i++) {
-                    // Pobieranie walut i kursów na dany dzień i potem w pętli wpisywanie jej do zmiennej
+                //For loop through every date starting with the oldest
+                for (int i = dataList.getLength()-1 ; i >= 0; i--) {
+                    // Elements which contains course (currency and rate)
                     NodeList kursList = (NodeList) doc.getElementsByTagName("Cube").item(0).getChildNodes().item(i);
 
-
-                    //Pętla od walut na dany dzien
+                    //For loop through every course
                     for (int j = 0; j < kursList.getLength(); j++) {
 
                         Node dataNode = dataList.item(i);
                         Node kursNode = kursList.item(j);
 
-                        // Sprawdzenie kiedy kończą się waluty na dany dzień
+                        // Checking that is still element of course
                         if (kursNode.getNodeType() == Node.ELEMENT_NODE) {
 
-                            // Pobieranie danych do bazy
+                            // Getting actual value of looking parameters
                             Element kursElement = (Element) kursNode;
                             Element dataElement = (Element) dataNode;
 
-                            System.out.println(dataElement.getAttribute("time"));
-                            System.out.println(kursElement.getAttribute("currency"));
-                            System.out.println(kursElement.getAttribute("rate"));
-
+                            // Creating new istance of exchange class
                             Exchange rates = new Exchange();
 
-
+                            // Setting to instance a new value for parameters and saving it
                             rates.setCurrencyFrom("EUR");
                             rates.setCurrencyTo(kursElement.getAttribute("currency"));
                             rates.setDate(Date.valueOf(dataElement.getAttribute("time")));
                             rates.setRate(new BigDecimal(kursElement.getAttribute("rate")));
                             exchangeRepository.save(rates);
                         }
-
-
                     }
                 }
-
-
-            } catch (
-                    Exception e) {
-
+                System.out.println("Saving data was ended");
+            } catch (Exception e) {
+                System.out.println("Error occurs while fetching");
             }
-
+        }
+        else{
+            System.out.println("Data is present in table");
         }
     }
 }
